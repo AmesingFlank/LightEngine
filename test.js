@@ -62,7 +62,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
     return undefined;
 }
 
-function main() {
+function render() {
     // Get A WebGL context
     var canvas = document.getElementById("c");
     var gl = canvas.getContext("webgl2");
@@ -142,6 +142,10 @@ function main() {
 
     gl.drawArrays(primitiveType, offset, count);
 
+}
+
+function main(){
+    render();
 }
 
 main();
