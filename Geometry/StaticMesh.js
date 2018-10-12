@@ -1,14 +1,22 @@
 import {vec2,vec3} from "./../Utility/gl-matrix.js"
+import {FileLoader} from "../Utility/ResourceHandlers.js";
 
-class StaticMeshVertex{
+function DEBUG_BREAK(){
+    var DEBUG_BERAK_USELESS_VARIABLE="USELESS VARIABLE";
+}
+
+export class StaticMeshVertex{
     constructor(){
         this.position = vec3.create();
         this.texCoords = vec2.create();
         this.normal = vec3.create();
     }
+    static get componentCount(){
+        return 8;
+    }
 }
 
-class StaticMeshTriangle{
+export class StaticMeshTriangle{
     constructor(){
         this.indices=[];
     }
@@ -16,84 +24,99 @@ class StaticMeshTriangle{
 
 
 
-class Parser{
+export class Parser{
     static beginsWith(line,firstWord){
-        var words = line.trim().split(" ");
+        var words = line.trim().split(" ").filter(x=>x.length!==0);
         return words[0]===firstWord;
     }
     static tailWords(line){
-        var words = line.trim().split(" ");
+        var words = line.trim().split(" ").filter(x=>x.length!==0);
         return words.splice(1);
     }
 }
 
-class ObjFileParser{
+export class ObjFileParser{
+
+    static getStaticMeshFromFileName(fileName,callBack){
+        FileLoader.getFileString(fileName,function (str) {
+            callBack(ObjFileParser.parseObj(str));
+        })
+    }
 
     static parseObj(objString){
-        var resultStaticMesh = new StaticMesh();
+        var resultStaticModel = new StaticModel();
 
         var lines = objString.split("\n");
-        var currentPiece = null;
+        var currentMesh = null;
         var texCoords = [];
         var normals = [];
 
         for(var l = 0;l<lines.length;++l){
             var thisLine = lines[l];
+            var tailWords = Parser.tailWords(thisLine);
             if(Parser.beginsWith(thisLine,"mtllib")){
-                var materialFileName = Parser.tailWords(thisLine)[0];
-                resultStaticMesh.materialLib = MtlFileParser.parseMtl(MtlFileParser.getMtlFileString(materialFileName));
+                var materialFileName = tailWords[0];
+                resultStaticModel.materialLib = MtlFileParser.parseMtl(MtlFileParser.getMtlFileString(materialFileName));
             }
             else if(Parser.beginsWith(thisLine,"g") || Parser.beginsWith(thisLine,"o")){
-                if(currentPiece!=null){
-                    resultStaticMesh.pieces.push(currentPiece);
+                if(currentMesh!=null){
+                    resultStaticModel.meshes.push(currentMesh);
                 }
-                var thisPieceName = Parser.tailWords(thisLine)[0];
-                currentPiece = new StaticMeshPiece(thisPieceName,resultStaticMesh);
+                var thisPieceName = tailWords[0];
+                currentMesh = new StaticMesh(thisPieceName,resultStaticModel);
             }
             else if(Parser.beginsWith(thisLine,"v")){
                 var newVertex = new StaticMeshVertex();
-                newVertex.position= Parser.tailWords(thisLine).map(parseFloat);
-                resultStaticMesh.vertices.push(newVertex);
+                newVertex.position= tailWords.map(x=>parseFloat(x));
+                resultStaticModel.vertices.push(newVertex);
             }
             else if(Parser.beginsWith(thisLine,"vt")){
-                texCoords.push(Parser.tailWords(thisLine).map(parseFloat));
+                texCoords.push(tailWords.map(x=>parseFloat(x)));
             }
             else if(Parser.beginsWith(thisLine,"vn")){
-                normals.push(Parser.tailWords(thisLine).map(parseFloat));
+                normals.push(tailWords.map(x=>parseFloat(x)));
             }
             else if(Parser.beginsWith(thisLine,"usemtl")){
-                var materialName = Parser.tailWords(thisLine)[0];
-                currentPiece.material=resultStaticMesh.materialLib.getMaterialByName(materialName);
+                var materialName = tailWords[0];
+                currentMesh.material=resultStaticModel.materialLib.getMaterialByName(materialName);
             }
             else if(Parser.beginsWith(thisLine,"f")){
-                var newTriangle = new StaticMeshTriangle();
-                var vertexStrings = Parser.tailWords(thisLine);
-                for(var v = 0;v<3;++v){
+                var newIndices = [];
+                var vertexStrings = tailWords;
+                for(var v = 0;v<vertexStrings.length;++v){
                     var thisVertexString = vertexStrings[v];
-                    var properties = thisVertexString.split("/").map(parseInt);
+                    var propertiesStr = thisVertexString.split("/");
+                    var properties = propertiesStr.map(x=>parseInt(x)-1);
                     var vertexID = properties[0];
-                    newTriangle.indices[v]=vertexID;
-                    if(properties.length===2){
-                        resultStaticMesh.vertices[vertexID].normal=normals[properties[1]];
-                    }
-                    else if(properties.length===3){
-                        resultStaticMesh.vertices[vertexID].normal=normals[properties[2]];
-                        resultStaticMesh.vertices[vertexID].texCoords=texCoords[properties[1]];
-                    }
-                    else{
-                        alert("vertex has wrong number of properties, this should NEVER happen");
+                    newIndices[v]=vertexID;
+                    if(properties.length>=2 && propertiesStr[1].length!==0){
+                        resultStaticModel.vertices[vertexID].texCoords=texCoords[properties[1]];                    }
+                    if(properties.length===3){
+                        resultStaticModel.vertices[vertexID].normal=normals[properties[2]];
                     }
                 }
-                currentPiece.triangles.push(newTriangle);
+                var newTriangle = new StaticMeshTriangle();
+                newTriangle.indices=newIndices.slice(0,3);
+                currentMesh.triangles.push(newTriangle);
+                if(newIndices.length===4){
+                    var newTriangle2 = new StaticMeshTriangle();
+                    newTriangle2.indices[0]=newIndices[0];
+                    newTriangle2.indices[1]=newIndices[2];
+                    newTriangle2.indices[2]=newIndices[3];
+                    currentMesh.triangles.push(newTriangle2);
+                }
             }
 
         }
+        if(currentMesh!=null){
+            resultStaticModel.meshes.push(currentMesh);
+        }
 
-        return resultStaticMesh;
+        return resultStaticModel;
     }
 }
 
-class MtlFileParser{
+export class MtlFileParser{
     static getMtlFileString(fileName){
         return "";
     }
@@ -102,25 +125,59 @@ class MtlFileParser{
     }
 }
 
-class StaticMesh{
+export class StaticModel{
     constructor(){
-        this.pieces = [];
+        this.meshes = [];
         this.materialLib = null;
         this.vertices = [];
+        this.vertexBuffer = null;
     }
-
+    prepareRenderData(gl){
+        this.vertexBuffer = new VertexBuffer(this.vertices,gl);
+        for(var i = 0;i<this.meshes.length;++i){
+            this.meshes[i].renderData = new StaticMeshRenderData(this.meshes[i].triangles,gl);
+        }
+    }
 }
 
-class StaticMeshPiece{
+export class StaticMesh{
     constructor(name,parent){
         this.name = name;
         this.staticMesh = parent;
         this.material = new Material();
         this.triangles = [];
+        this.renderData = null;
+    }
+
+}
+
+export class VertexBuffer{
+    constructor(vertices,gl){
+        this.vertexData = [];
+        this.VBO = null;
+        for(var i = 0;i<vertices.length;++i){
+            vertices[i].position.map(x=>this.vertexData.push(x));
+            //vertices[i].texCoords.map(x=>this.vertexData.push(x));
+            //vertices[i].normal.map(x=>this.vertexData.push(x));
+        }
     }
 }
 
-class MaterialLib{
+export class StaticMeshRenderData{
+    constructor(triangles,gl){
+        this.indexData = [];
+        this.EBO = null;
+        this.VAO = null;
+
+        for(var i = 0;i<triangles.length;++i){
+            triangles[i].indices.map(x=>this.indexData.push(x));
+        }
+    }
+}
+
+
+
+export class MaterialLib{
     constructor(){
         this.materials = [];
     }
@@ -129,7 +186,7 @@ class MaterialLib{
     }
 }
 
-class Material{
+export class Material{
     constructor(){
 
     }

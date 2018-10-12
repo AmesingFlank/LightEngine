@@ -6,7 +6,7 @@ export class FileLoader{
                 callBack(this.responseText);
             }
         };
-        xhr.open('get', fileName, false);
+        xhr.open('get', "./"+fileName, false);
         xhr.send();
     }
 
@@ -15,6 +15,6 @@ export class FileLoader{
         image.onload = function() {
             callBack(image);
         };
-        image.src = fileName;
+        image.src = "./"+fileName;
     }
 }

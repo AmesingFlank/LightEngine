@@ -1,4 +1,8 @@
 import {mat4} from './Utility/gl-matrix.js'
+import {FileLoader} from "./Utility/ResourceHandlers.js";
+import {StaticModel,ObjFileParser} from "./Geometry/StaticMesh.js";
+import {Camera} from "./Geometry/Camera.js";
+
 "use strict";
 
 var vertexShaderSource = `#version 300 es
@@ -62,90 +66,106 @@ function createProgram(gl, vertexShader, fragmentShader) {
     return undefined;
 }
 
-function render() {
-    // Get A WebGL context
-    var canvas = document.getElementById("c");
-    var gl = canvas.getContext("webgl2");
-    if (!gl) {
-        return;
-    }
+function render(positions,indices,gl) {
 
-    // create GLSL shaders, upload the GLSL source, compile the shaders
     var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-    // Link the two shaders into a program
     var program = createProgram(gl, vertexShader, fragmentShader);
 
-    // look up where the vertex data needs to go.
+
     var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+    var modelLocation = gl.getUniformLocation(program,"model");
+    var viewLocation = gl.getUniformLocation(program,"view");
+    var projectionLocation = gl.getUniformLocation(program,"projection");
 
-    // Create a buffer and put three 2d clip space points in it
-    var positionBuffer = gl.createBuffer();
 
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-    var positions = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
+    /*
+    var z= -0.8;
+    positions = [
+        0, 0,z,
+        0, 0.5,z,
+        0.5, 0,z,
+        0.5,0.5,z
     ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-    // Create a vertex array object (attribute state)
+    indices = [
+        0,2,1,
+        1,2,3,
+    ];
+    */
+
+
     var vao = gl.createVertexArray();
 
-    // and make it the one we're currently working with
     gl.bindVertexArray(vao);
 
-    // Turn on the attribute
+    var positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+    var indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(indices),gl.STATIC_DRAW);
+
     gl.enableVertexAttribArray(positionAttributeLocation);
 
-    // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
+    var size = 3;
+    var stride = size*4;
     gl.vertexAttribPointer(
-        positionAttributeLocation, size, type, normalize, stride, offset);
+        positionAttributeLocation, size, gl.FLOAT, false, stride,0);
 
     //webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
-    // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    // Clear the canvas
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // Tell it to use our program (pair of shaders)
+
     gl.useProgram(program);
 
-    // Bind the attribute/buffer set we want.
     gl.bindVertexArray(vao);
 
-    // draw
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 3;
 
-    var identityMat = mat4.create();
-    var model_location = gl.getUniformLocation(program,"model");
-    var view_location = gl.getUniformLocation(program,"view");
-    var projection_location = gl.getUniformLocation(program,"projection");
+    var camera = new Camera(0,0,5);
 
-    gl.uniformMatrix4fv(model_location,false,identityMat);
-    gl.uniformMatrix4fv(view_location,false,identityMat);
-    gl.uniformMatrix4fv(projection_location,false,identityMat);
+    var modelMat = mat4.create();
+    var viewMat = mat4.create();
+    var projectionMat = mat4.create();
 
-    gl.drawArrays(primitiveType, offset, count);
+    viewMat=camera.getViewMatrix();
+    mat4.perspective(projectionMat,45,1,0.001,1000);
+
+    gl.uniformMatrix4fv(modelLocation,false,modelMat);
+    gl.uniformMatrix4fv(viewLocation,false,viewMat);
+    gl.uniformMatrix4fv(projectionLocation,false,projectionMat);
+
+    //gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_INT,0);
 
 }
 
 function main(){
-    render();
+    var canvas = document.getElementById("c");
+
+    canvas.width = document.body.offsetWidth;
+    canvas.height = document.body.offsetHeight;
+
+    var gl = canvas.getContext("webgl2");
+    if (!gl) {
+        return;
+    }
+    gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.CULL_FACE);
+
+    gl.clearColor(0, 0, 0.8, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    ObjFileParser.getStaticMeshFromFileName("whitebloodcell.obj",function (staticMesh) {
+        staticMesh.prepareRenderData(gl);
+        for(var i = 0;i<staticMesh.meshes.length;++i){
+            render(staticMesh.vertexBuffer.vertexData,staticMesh.meshes[i].renderData.indexData,gl);
+        }
+    });
+
 }
 
 main();
