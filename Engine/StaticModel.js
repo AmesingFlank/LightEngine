@@ -1,6 +1,6 @@
 import {vec2,vec3} from "./../Utility/gl-matrix.js"
 import {FileLoader} from "../Utility/ResourceHandlers.js";
-import {Material,MtlFileParser,MaterialLib} from "./Material.js";
+import {Material,MaterialLib} from "./Material.js";
 
 function DEBUG_BREAK(){
     var DEBUG_BERAK_USELESS_VARIABLE="USELESS VARIABLE";
@@ -24,101 +24,6 @@ export class StaticMeshTriangle{
 }
 
 
-
-export class Parser{
-    static beginsWith(line,firstWord){
-        var words = line.trim().split(" ").filter(x=>x.length!==0);
-        return words[0]===firstWord;
-    }
-    static tailWords(line){
-        var words = line.trim().split(" ").filter(x=>x.length!==0);
-        return words.splice(1);
-    }
-}
-
-export class ObjFileParser{
-
-    static getStaticMeshFromFileName(fileName,callBack){
-        FileLoader.getFileString(fileName,function (str) {
-            callBack(ObjFileParser.parseObj(str));
-        })
-    }
-
-    static parseObj(objString){
-        var resultStaticModel = new StaticModel();
-
-        var lines = objString.split("\n");
-        var currentMesh = null;
-        var texCoords = [];
-        var normals = [];
-
-        for(var l = 0;l<lines.length;++l){
-            var thisLine = lines[l];
-            var tailWords = Parser.tailWords(thisLine);
-            if(Parser.beginsWith(thisLine,"mtllib")){
-                var materialFileName = tailWords[0];
-                resultStaticModel.materialLibFileName = materialFileName;
-                resultStaticModel.needMaterialLib = true;
-            }
-            else if(Parser.beginsWith(thisLine,"g") || Parser.beginsWith(thisLine,"o")){
-                if(currentMesh!=null){
-                    resultStaticModel.meshes.push(currentMesh);
-                }
-                var thisPieceName = tailWords[0];
-                currentMesh = new StaticMesh(thisPieceName,resultStaticModel);
-            }
-            else if(Parser.beginsWith(thisLine,"v")){
-                var newVertex = new StaticMeshVertex();
-                newVertex.position= tailWords.map(x=>parseFloat(x));
-                resultStaticModel.vertices.push(newVertex);
-            }
-            else if(Parser.beginsWith(thisLine,"vt")){
-                texCoords.push(tailWords.map(x=>parseFloat(x)));
-            }
-            else if(Parser.beginsWith(thisLine,"vn")){
-                normals.push(tailWords.map(x=>parseFloat(x)));
-            }
-            else if(Parser.beginsWith(thisLine,"usemtl")){
-                var materialName = tailWords[0];
-                currentMesh.materialName = materialName;
-            }
-            else if(Parser.beginsWith(thisLine,"f")){
-                var newIndices = [];
-                var vertexStrings = tailWords;
-                for(var v = 0;v<vertexStrings.length;++v){
-                    var thisVertexString = vertexStrings[v];
-                    var propertiesStr = thisVertexString.split("/");
-                    var properties = propertiesStr.map(x=>parseInt(x)-1);
-                    var vertexID = properties[0];
-                    newIndices[v]=vertexID;
-                    if(properties.length>=2 && propertiesStr[1].length!==0){
-                        resultStaticModel.vertices[vertexID].texCoords=texCoords[properties[1]];                    }
-                    if(properties.length===3){
-                        resultStaticModel.vertices[vertexID].normal=normals[properties[2]];
-                    }
-                }
-                var newTriangle = new StaticMeshTriangle();
-                newTriangle.indices=newIndices.slice(0,3);
-                currentMesh.triangles.push(newTriangle);
-                if(newIndices.length===4){
-                    var newTriangle2 = new StaticMeshTriangle();
-                    newTriangle2.indices[0]=newIndices[0];
-                    newTriangle2.indices[1]=newIndices[2];
-                    newTriangle2.indices[2]=newIndices[3];
-                    currentMesh.triangles.push(newTriangle2);
-                }
-            }
-
-        }
-        if(currentMesh!=null){
-            resultStaticModel.meshes.push(currentMesh);
-        }
-
-        return resultStaticModel;
-    }
-}
-
-
 export class StaticModel{
     constructor(){
         this.meshes = [];
@@ -132,7 +37,7 @@ export class StaticModel{
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
         for(var i = 0;i<this.meshes.length;++i){
-            this.meshes[i].renderData = new StaticMeshRenderData(this.meshes[i].triangles,gl);
+            this.meshes[i].prepareRenderData(gl);
         }
     }
     prepareMaterial(callBack){
@@ -148,35 +53,48 @@ export class StaticModel{
 export class StaticMesh{
     constructor(name,parent){
         this.name = name;
-        this.staticMesh = parent;
+        this.parentModel = parent;
         this.material = new Material();
         this.materialName = "";
         this.triangles = [];
         this.renderData = null;
     }
-
+    prepareRenderData(gl){
+        this.renderData = new StaticMeshRenderData(this.triangles,gl,this.parentModel.vertexBuffer.VBO);
+    }
 }
 
 export class VertexBuffer{
-    constructor(vertices,gl){
+    constructor(vertices,gl) {
         this.vertexData = [];
-        this.VBO = null;
-        for(var i = 0;i<vertices.length;++i){
-            vertices[i].position.map(x=>this.vertexData.push(x));
+        this.VBO = gl.createBuffer();
+        for (var i = 0; i < vertices.length; ++i) {
+            vertices[i].position.map(x => this.vertexData.push(x));
             //vertices[i].texCoords.map(x=>this.vertexData.push(x));
             //vertices[i].normal.map(x=>this.vertexData.push(x));
         }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
     }
 }
 
 export class StaticMeshRenderData{
-    constructor(triangles,gl){
+    constructor(triangles,gl,VBO){
         this.indexData = [];
-        this.EBO = null;
+        this.EBO = gl.createBuffer();
         this.VAO = null;
-
         for(var i = 0;i<triangles.length;++i){
             triangles[i].indices.map(x=>this.indexData.push(x));
         }
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.EBO);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(this.indexData),gl.STATIC_DRAW);
+        this.setUpVAO(gl,VBO);
+    }
+    setUpVAO(gl,VBO){
+        this.VAO = gl.createVertexArray();
+        gl.bindVertexArray(this.VAO);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.EBO);
+        gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
+
     }
 }
