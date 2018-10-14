@@ -1,7 +1,7 @@
 import {mat4} from './Utility/gl-matrix.js'
 import {FileLoader} from "./Utility/ResourceHandlers.js";
-import {StaticModel,ObjFileParser} from "./Geometry/StaticMesh.js";
-import {Camera} from "./Geometry/Camera.js";
+import {StaticModel,ObjFileParser} from "./Engine/StaticModel.js";
+import {Camera} from "./Engine/Camera.js";
 
 "use strict";
 

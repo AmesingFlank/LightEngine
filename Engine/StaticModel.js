@@ -1,5 +1,6 @@
 import {vec2,vec3} from "./../Utility/gl-matrix.js"
 import {FileLoader} from "../Utility/ResourceHandlers.js";
+import {Material,MtlFileParser,MaterialLib} from "./Material.js";
 
 function DEBUG_BREAK(){
     var DEBUG_BERAK_USELESS_VARIABLE="USELESS VARIABLE";
@@ -56,7 +57,8 @@ export class ObjFileParser{
             var tailWords = Parser.tailWords(thisLine);
             if(Parser.beginsWith(thisLine,"mtllib")){
                 var materialFileName = tailWords[0];
-                resultStaticModel.materialLib = MtlFileParser.parseMtl(MtlFileParser.getMtlFileString(materialFileName));
+                resultStaticModel.materialLibFileName = materialFileName;
+                resultStaticModel.needMaterialLib = true;
             }
             else if(Parser.beginsWith(thisLine,"g") || Parser.beginsWith(thisLine,"o")){
                 if(currentMesh!=null){
@@ -78,7 +80,7 @@ export class ObjFileParser{
             }
             else if(Parser.beginsWith(thisLine,"usemtl")){
                 var materialName = tailWords[0];
-                currentMesh.material=resultStaticModel.materialLib.getMaterialByName(materialName);
+                currentMesh.materialName = materialName;
             }
             else if(Parser.beginsWith(thisLine,"f")){
                 var newIndices = [];
@@ -116,21 +118,16 @@ export class ObjFileParser{
     }
 }
 
-export class MtlFileParser{
-    static getMtlFileString(fileName){
-        return "";
-    }
-    static parseMtl(mtlString){
-        return new MaterialLib();
-    }
-}
 
 export class StaticModel{
     constructor(){
         this.meshes = [];
-        this.materialLib = null;
         this.vertices = [];
         this.vertexBuffer = null;
+
+        this.materialLib = null;
+        this.materialLibFileName = "";
+        this.needMaterialLib = false;
     }
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
@@ -138,6 +135,14 @@ export class StaticModel{
             this.meshes[i].renderData = new StaticMeshRenderData(this.meshes[i].triangles,gl);
         }
     }
+    prepareMaterial(callBack){
+        var self = this;
+        MtlFileParser.getMaterialLibFromFileName(this.materialLibFileName,function (materialLib) {
+            self.materialLib=materialLib;
+            callBack();
+        });
+    }
+
 }
 
 export class StaticMesh{
@@ -145,6 +150,7 @@ export class StaticMesh{
         this.name = name;
         this.staticMesh = parent;
         this.material = new Material();
+        this.materialName = "";
         this.triangles = [];
         this.renderData = null;
     }
@@ -172,22 +178,5 @@ export class StaticMeshRenderData{
         for(var i = 0;i<triangles.length;++i){
             triangles[i].indices.map(x=>this.indexData.push(x));
         }
-    }
-}
-
-
-
-export class MaterialLib{
-    constructor(){
-        this.materials = [];
-    }
-    getMaterialByName(name){
-        return this.materials[0];
-    }
-}
-
-export class Material{
-    constructor(){
-
     }
 }
