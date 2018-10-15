@@ -36,9 +36,7 @@ export class StaticModel{
     }
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
-        for(var i = 0;i<this.meshes.length;++i){
-            this.meshes[i].prepareRenderData(gl);
-        }
+        this.meshes.forEach(x=>x.prepareRenderData(gl));
     }
     prepareMaterial(callBack){
         var self = this;
@@ -46,6 +44,9 @@ export class StaticModel{
             self.materialLib=materialLib;
             callBack();
         });
+    }
+    drawWithShaderProgram(gl,shaderProgram){
+        this.meshes.forEach(x=>x.drawWithShaderProgram(gl,shaderProgram));
     }
 
 }
@@ -57,10 +58,29 @@ export class StaticMesh{
         this.material = new Material();
         this.materialName = "";
         this.triangles = [];
-        this.renderData = null;
+        this.elementBuffer = null;
     }
     prepareRenderData(gl){
-        this.renderData = new StaticMeshRenderData(this.triangles,gl,this.parentModel.vertexBuffer.VBO);
+        this.elementBuffer = new ElementBuffer(this.triangles,gl);
+    }
+
+    drawWithShaderProgram(gl,shaderProgram){
+        var VAO =  gl.createVertexArray();
+        gl.bindVertexArray(VAO);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.elementBuffer.EBO);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.parentModel.vertexBuffer.VBO);
+
+        var positionAttributeLocation = gl.getAttribLocation(shaderProgram.program, "a_position");
+        gl.enableVertexAttribArray(positionAttributeLocation);
+        var size = 3;
+        var stride = size*4;
+        gl.vertexAttribPointer(
+            positionAttributeLocation, size, gl.FLOAT, false, stride,0);
+
+        gl.useProgram(shaderProgram.program);
+        gl.bindVertexArray(VAO);
+        gl.drawElements(gl.TRIANGLES,this.elementBuffer.indexData.length,gl.UNSIGNED_INT,0);
+
     }
 }
 
@@ -78,23 +98,14 @@ export class VertexBuffer{
     }
 }
 
-export class StaticMeshRenderData{
-    constructor(triangles,gl,VBO){
+export class ElementBuffer{
+    constructor(triangles,gl){
         this.indexData = [];
         this.EBO = gl.createBuffer();
-        this.VAO = null;
         for(var i = 0;i<triangles.length;++i){
             triangles[i].indices.map(x=>this.indexData.push(x));
         }
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.EBO);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(this.indexData),gl.STATIC_DRAW);
-        this.setUpVAO(gl,VBO);
-    }
-    setUpVAO(gl,VBO){
-        this.VAO = gl.createVertexArray();
-        gl.bindVertexArray(this.VAO);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.EBO);
-        gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-
     }
 }

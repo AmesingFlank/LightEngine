@@ -26,7 +26,8 @@ export class ObjFileParser{
 
     static getStaticModelFromFileName(fileName, callBack){
         FileLoader.getFileString(fileName,function (str) {
-            callBack(ObjFileParser.parseObj(str));
+            var resultStaticModel = ObjFileParser.parseObj(str);
+            callBack(resultStaticModel);
         })
     }
 
