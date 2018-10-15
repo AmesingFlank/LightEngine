@@ -64,8 +64,6 @@ export class StaticMesh{
     }
 
     drawWithShaderProgram(gl,shaderProgram){
-        var VAO =  gl.createVertexArray();
-        gl.bindVertexArray(VAO);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.elementBuffer.EBO);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.parentModel.vertexBuffer.VBO);
 
@@ -77,7 +75,6 @@ export class StaticMesh{
             positionAttributeLocation, size, gl.FLOAT, false, stride,0);
 
         gl.useProgram(shaderProgram.program);
-        gl.bindVertexArray(VAO);
         gl.drawElements(gl.TRIANGLES,this.elementBuffer.indexData.length,gl.UNSIGNED_INT,0);
 
     }

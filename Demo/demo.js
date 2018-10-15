@@ -16,10 +16,12 @@ function main(){
     canvas.width = document.body.offsetWidth;
     canvas.height = document.body.offsetHeight;
 
-    var gl = canvas.getContext("webgl2");
+    var gl = canvas.getContext("webgl");
     if (!gl) {
         return;
     }
+
+    var ext = gl.getExtension('OES_element_index_uint');
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.DEPTH_TEST);
