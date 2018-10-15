@@ -23,7 +23,6 @@ export class StaticMeshTriangle{
     }
 }
 
-
 export class StaticModel{
     constructor(){
         this.meshes = [];
