@@ -6,7 +6,7 @@ export class FileLoader{
                 callBack(this.responseText);
             }
         };
-        xhr.open('get', "./"+fileName, false);
+        xhr.open('get', fileName, false);
         xhr.send();
     }
 

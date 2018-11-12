@@ -54,8 +54,8 @@ function main(){
 
 
 
-    ObjFileParser.getStaticModelFromFileName("whitebloodcell.obj",function (staticModel) {
-        staticModel.prepareRenderData(gl);
+    ObjFileParser.getStaticModelFromFileName("whitebloodcell.obj",gl,function (staticModel) {
+        //staticModel.prepareRenderData(gl);
         staticModel.drawWithShaderProgram(gl,shaderProgram);
     });
 

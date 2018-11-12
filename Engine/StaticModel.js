@@ -1,6 +1,7 @@
 import {vec2,vec3} from "./../Utility/gl-matrix.js"
 import {FileLoader} from "../Utility/ResourceHandlers.js";
 import {Material,MaterialLib} from "./Material.js";
+import {MtlFileParser} from "../Utility/FileParsers.js";
 
 function DEBUG_BREAK(){
     var DEBUG_BERAK_USELESS_VARIABLE="USELESS VARIABLE";
@@ -32,14 +33,22 @@ export class StaticModel{
         this.materialLib = null;
         this.materialLibFileName = "";
         this.needMaterialLib = false;
+
+        this.path = "";
     }
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
         this.meshes.forEach(x=>x.prepareRenderData(gl));
+        this.meshes.forEach(thisMesh => {
+           var thisMaterial = thisMesh.material;
+           if(thisMaterial.ambient && thisMaterial.ambient.texture){
+               thisMaterial.ambient.texture.load();
+           }
+        });
     }
     prepareMaterial(callBack){
         var self = this;
-        MtlFileParser.getMaterialLibFromFileName(this.materialLibFileName,function (materialLib) {
+        MtlFileParser.getMaterialLibFromFileName(this.path+this.materialLibFileName,function (materialLib) {
             self.materialLib=materialLib;
             callBack();
         });
