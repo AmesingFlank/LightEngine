@@ -26,14 +26,16 @@ export class Parser{
 export class ObjFileParser{
 
     static getStaticModelFromFileName(fileName, gl,callBack){
+        fileName = "./"+fileName;
         FileLoader.getFileString(fileName,function (str) {
             var path_name = fileName.split("/");
-            var path = "./"+path_name[0]+"/";
+            var path = path_name.slice(0,path_name.length-1).join("/")+"/";
             var resultStaticModel = ObjFileParser.parseObj(str);
+            resultStaticModel.path = path;
             resultStaticModel.prepareMaterial(function () {
-                resultStaticModel.path = path;
                 resultStaticModel.prepareRenderData(gl);
                 callBack(resultStaticModel);
+
             });
             //callBack(resultStaticModel);
         })
@@ -119,8 +121,8 @@ export class MtlFileParser{
     static getMaterialLibFromFileName(fileName,callBack){
         FileLoader.getFileString(fileName,function (mtlString) {
             var path_name = fileName.split("/");
-            var path = "./"+path_name[0]+"/";
-            callBack(MtlFileParser.parseMtl(mtlString),path);
+            var path = path_name.slice(0,path_name.length-1).join("/")+"/";
+            callBack(MtlFileParser.parseMtl(mtlString,path));
         });
     }
     static parseMtl(mtlString,path){
@@ -143,7 +145,7 @@ export class MtlFileParser{
             }
             else if(Parser.beginsWith(thisLine,"map_Ka")){
                 if(currentMaterial.ambient==null) currentMaterial.ambient=new MaterialProperty();
-                currentMaterial.ambient.texture= new Texture2D(tailWords.last());
+                currentMaterial.ambient.texture= new Texture2D(tailWords.last(),path);
             }
             else if(Parser.beginsWith(thisLine,"Kd")){
                 if(currentMaterial.diffuse==null) currentMaterial.diffuse=new MaterialProperty();
@@ -151,7 +153,7 @@ export class MtlFileParser{
             }
             else if(Parser.beginsWith(thisLine,"map_Kd")){
                 if(currentMaterial.diffuse==null) currentMaterial.diffuse=new MaterialProperty();
-                currentMaterial.diffuse.texture= new Texture2D(tailWords.last());
+                currentMaterial.diffuse.texture= new Texture2D(tailWords.last(),path);
             }
             else if(Parser.beginsWith(thisLine,"Ks")){
                 if(currentMaterial.specular==null) currentMaterial.specular=new MaterialProperty();
@@ -159,7 +161,7 @@ export class MtlFileParser{
             }
             else if(Parser.beginsWith(thisLine,"map_Ks")){
                 if(currentMaterial.specular==null) currentMaterial.specular=new MaterialProperty();
-                currentMaterial.specular.texture= new Texture2D(tailWords.last());
+                currentMaterial.specular.texture= new Texture2D(tailWords.last(),path);
             }
             else if(Parser.beginsWith(thisLine,"Ns")){
                 if(currentMaterial.specularIntensity==null) currentMaterial.specularIntensity=new MaterialProperty();
@@ -167,7 +169,7 @@ export class MtlFileParser{
             }
             else if(Parser.beginsWith(thisLine,"map_Ns")){
                 if(currentMaterial.specularIntensity==null) currentMaterial.specularIntensity=new MaterialProperty();
-                currentMaterial.specularIntensity.texture= new Texture2D(tailWords.last());
+                currentMaterial.specularIntensity.texture= new Texture2D(tailWords.last(),path);
             }
             else if(Parser.beginsWith(thisLine,"d")){
                 if(currentMaterial.alpha==null) currentMaterial.alpha=new MaterialProperty();
@@ -175,11 +177,11 @@ export class MtlFileParser{
             }
             else if(Parser.beginsWith(thisLine,"map_d")){
                 if(currentMaterial.alpha==null)  currentMaterial.alpha=new MaterialProperty();
-                currentMaterial.alpha.texture= new Texture2D(tailWords.last());
+                currentMaterial.alpha.texture= new Texture2D(tailWords.last(),path);
             }
             else if(Parser.beginsWith(thisLine,"bump") || Parser.beginsWith(thisLine,"map_Bump")){
                 if(currentMaterial.normal==null)  currentMaterial.normal=new MaterialProperty();
-                currentMaterial.normal.texture= new Texture2D(tailWords.last());
+                currentMaterial.normal.texture= new Texture2D(tailWords.last(),path);
             }
 
         }

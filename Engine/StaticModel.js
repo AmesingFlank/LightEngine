@@ -39,54 +39,47 @@ export class StaticModel{
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
         this.meshes.forEach(x=>x.prepareRenderData(gl));
-        this.meshes.forEach(thisMesh => {
-           var thisMaterial = thisMesh.material;
-           if(thisMaterial.ambient && thisMaterial.ambient.texture){
-               thisMaterial.ambient.texture.load();
-           }
-        });
+
     }
     prepareMaterial(callBack){
         var self = this;
         MtlFileParser.getMaterialLibFromFileName(this.path+this.materialLibFileName,function (materialLib) {
             self.materialLib=materialLib;
+            self.meshes.forEach(thisMesh =>{
+               thisMesh.material = materialLib.materials[thisMesh.materialName];
+            });
             callBack();
         });
     }
-    drawWithShaderProgram(gl,shaderProgram){
-        this.meshes.forEach(x=>x.drawWithShaderProgram(gl,shaderProgram));
-    }
-
 }
 
 export class StaticMesh{
     constructor(name,parent){
         this.name = name;
         this.parentModel = parent;
-        this.material = new Material();
+        this.material = null;
         this.materialName = "";
         this.triangles = [];
         this.elementBuffer = null;
     }
     prepareRenderData(gl){
         this.elementBuffer = new ElementBuffer(this.triangles,gl);
+        var availableTextures = [];
+        if(this.material.ambient && this.material.ambient.texture){
+            availableTextures.push(this.material.ambient.texture);
+        }
+        if(this.material.diffuse && this.material.diffuse.texture){
+            availableTextures.push(this.material.diffuse.texture);
+        }
+        if(this.material.specular && this.material.specular.texture){
+            availableTextures.push(this.material.specular.texture);
+        }
+        if(this.material.normal && this.material.normal.texture){
+            availableTextures.push(this.material.normal.texture);
+        }
+        availableTextures.forEach(tex => tex.load(gl));
     }
 
-    drawWithShaderProgram(gl,shaderProgram){
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.elementBuffer.EBO);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.parentModel.vertexBuffer.VBO);
-
-        var positionAttributeLocation = gl.getAttribLocation(shaderProgram.program, "a_position");
-        gl.enableVertexAttribArray(positionAttributeLocation);
-        var size = 3;
-        var stride = size*4;
-        gl.vertexAttribPointer(
-            positionAttributeLocation, size, gl.FLOAT, false, stride,0);
-
-        gl.useProgram(shaderProgram.program);
-        gl.drawElements(gl.TRIANGLES,this.elementBuffer.indexData.length,gl.UNSIGNED_INT,0);
-
-    }
 }
 
 export class VertexBuffer{
@@ -95,8 +88,8 @@ export class VertexBuffer{
         this.VBO = gl.createBuffer();
         for (var i = 0; i < vertices.length; ++i) {
             vertices[i].position.map(x => this.vertexData.push(x));
-            //vertices[i].texCoords.map(x=>this.vertexData.push(x));
-            //vertices[i].normal.map(x=>this.vertexData.push(x));
+            vertices[i].texCoords.map(x=>this.vertexData.push(x));
+            vertices[i].normal.map(x=>this.vertexData.push(x));
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);

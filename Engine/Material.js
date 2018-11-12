@@ -1,6 +1,6 @@
 import {FileLoader} from "../Utility/ResourceHandlers.js";
 import {Texture2D} from "./Texture.js";
-import {vec3} from "../Utility/gl-matrix.js";
+import {vec3,vec4} from "../Utility/gl-matrix.js";
 
 
 
