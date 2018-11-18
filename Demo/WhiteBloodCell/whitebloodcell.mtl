@@ -6,7 +6,7 @@ Ks 1.0000 1.0000 1.0000
 Tf 0.0000 0.0000 0.0000
 d 1.0000
 Ns 0
-map_Kd white.png
+#map_Kd white.png
 
 newmtl gray150
 Ka 0.0000 0.0000 0.0000
@@ -15,7 +15,7 @@ Ks 1.0000 1.0000 1.0000
 Tf 0.0000 0.0000 0.0000
 d 1.0000
 Ns 0
-map_Kd gray150.png
+#map_Kd gray150.png
 
 newmtl black
 Ka 0.0000 0.0000 0.0000
@@ -24,5 +24,5 @@ Ks 1.0000 1.0000 1.0000
 Tf 0.0000 0.0000 0.0000
 d 1.0000
 Ns 0
-map_Kd black.png
+#map_Kd black.png
 

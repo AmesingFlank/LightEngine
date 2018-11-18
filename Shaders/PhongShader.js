@@ -5,7 +5,7 @@ class MaterialPropertyHandle{
     constructor(gl,targetProgram,name){
         this.textureLocation =  gl.getUniformLocation(targetProgram, "t_"+name+"Texture");
         this.valueLocation =  gl.getUniformLocation(targetProgram, "u_"+name+"Value");
-        this.hasTextureLocation =  gl.getUniformLocation(targetProgram, "u_"+name+"Texture");
+        this.hasTextureLocation =  gl.getUniformLocation(targetProgram, "u_"+name+"HasTexture");
     }
 }
 
@@ -16,21 +16,26 @@ export class PhongShader extends ShaderProgram{
         super(gl, PhongShader.vertexShaderSource, PhongShader.fragmentShaderSource);
     }
 
-    setSingleMaterial(gl,materialProperty){
-
-    }
-    setMaterials(gl,material){
-        if(material.diffuse){
-            gl.uniform3fv(this.diffuseValueLocation,material.diffuse.value);
-            if(material.diffuse.texture){
-                if(material.diffuse.texture.glHandle){
-                    gl.activeTexture(gl.TEXTURE0);
-                    gl.bindTexture(gl.TEXTURE_2D,material.diffuse.texture.glHandle);
-                    gl.uniform1i(this.diffuseTextureLocation,0);
-                    gl.uniform1i(this.diffuseHasTextureLocation,1);
+    setSingleMaterial(gl,materialProperty,handle,index){
+        if(materialProperty){
+            gl.uniform3fv(handle.valueLocation,materialProperty.value);
+            gl.uniform1i(handle.hasTextureLocation,0);
+            if(materialProperty.texture){
+                if(materialProperty.texture.glHandle){
+                    gl.activeTexture(gl.TEXTURE0+index);
+                    gl.bindTexture(gl.TEXTURE_2D,materialProperty.texture.glHandle);
+                    gl.uniform1i(handle.textureLocation,0);
+                    gl.uniform1i(handle.hasTextureLocation,1);
                 }
             }
         }
+    }
+    setMaterials(gl,material){
+        this.setSingleMaterial(gl,material.ambient,this.ambientHandle,0);
+        this.setSingleMaterial(gl,material.diffuse,this.diffuseHandle,1);
+        this.setSingleMaterial(gl,material.specular,this.specularHandle,2);
+        this.setSingleMaterial(gl,material.specularIntensity,this.specularIntensityHandle,3);
+
     }
     setPointLights(gl,pointLights){
         var maxPointLightsCount = 16;
@@ -52,22 +57,10 @@ export class PhongShader extends ShaderProgram{
         this.modelAdjugateLocation = gl.getUniformLocation(this.program,"u_modelAdjugate");
 
 
-
-        this.ambientTextureLocation =  gl.getUniformLocation(this.program, "t_ambientTexture");
-        this.ambientValueLocation =  gl.getUniformLocation(this.program, "t_ambientValue");
-        this.ambientHasTextureLocation =  gl.getUniformLocation(this.program, "u_ambientHasTexture");
-
-        this.diffuseTextureLocation =  gl.getUniformLocation(this.program, "t_diffuseTexture");
-        this.diffuseValueLocation =  gl.getUniformLocation(this.program, "t_diffuseValue");
-        this.diffuseHasTextureLocation =  gl.getUniformLocation(this.program, "u_diffuseHasTexture");
-
-        this.specularTextureLocation =  gl.getUniformLocation(this.program, "t_specularTexture");
-        this.specularValueLocation =  gl.getUniformLocation(this.program, "t_specularValue");
-        this.specularHasTextureLocation =  gl.getUniformLocation(this.program, "t_specularHasTexture");
-
-        this.specularIntensityTextureLocation =  gl.getUniformLocation(this.program, "t_specularIntensityTexture");
-        this.specularIntensityValueLocation =  gl.getUniformLocation(this.program, "t_specularIntensityValue");
-        this.specularIntensityHasTextureLocation =  gl.getUniformLocation(this.program, "t_specularIntensityHasTexture");
+        this.ambientHandle = new MaterialPropertyHandle(gl,this.program,"ambient");
+        this.diffuseHandle = new MaterialPropertyHandle(gl,this.program,"diffuse");
+        this.specularHandle = new MaterialPropertyHandle(gl,this.program,"specular");
+        this.specularIntensityHandle = new MaterialPropertyHandle(gl,this.program,"specularIntensity");
 
     }
     setAttribLocations(gl){
@@ -152,20 +145,20 @@ varying vec3 v_normal;
 varying vec3 v_cameraPosition;
 
 uniform sampler2D t_ambientTexture;
-uniform vec3 t_ambientValue;
-uniform bool u_ambientHasTexture;
+uniform vec3 u_ambientValue;
+uniform int u_ambientHasTexture;
 
 uniform sampler2D t_diffuseTexture;
-uniform vec3 t_diffuseValue;
-uniform bool u_diffuseHasTexture;
+uniform vec3 u_diffuseValue;
+uniform int u_diffuseHasTexture;
 
 uniform sampler2D t_specularTexture;
-uniform vec3 t_specularValue;
-uniform bool u_specularHasTexture;
+uniform vec3 u_specularValue;
+uniform int u_specularHasTexture;
 
 uniform sampler2D t_specularIntensityTexture;
-uniform vec3 t_specularIntensityValue;
-uniform bool u_specularIntensityHasTexture;
+uniform vec3 u_specularIntensityValue;
+uniform int u_specularIntensityHasTexture;
 
 struct PointLight {
     vec3 position;
@@ -177,19 +170,24 @@ uniform PointLight u_pointLights[MAX_POINTLIGHTS_COUNT];
 
 void main() {
     
-    vec3 objectAmbient = t_ambientValue;
-    if(u_ambientHasTexture){
+    vec3 objectAmbient = u_ambientValue;
+    if(u_ambientHasTexture != 0){
         objectAmbient = texture2D(t_ambientTexture, v_texCoords).rgb;
     }
 
-    vec3 objectDiffuse = t_diffuseValue;
-    if(u_diffuseHasTexture){
+    vec3 objectDiffuse = u_diffuseValue;
+    if(u_diffuseHasTexture != 0){
         objectDiffuse = texture2D(t_diffuseTexture, v_texCoords).rgb;
     }
     
-    vec3 objectSpecular = t_specularValue;
-    if(u_specularHasTexture){
+    vec3 objectSpecular = u_specularValue;
+    if(u_specularHasTexture != 0){
         objectSpecular = texture2D(t_specularTexture, v_texCoords).rgb;
+    }
+    
+    vec3 objectSpecularIntensity = u_specularIntensityValue;
+    if(u_specularIntensityHasTexture != 0){
+        objectSpecularIntensity = texture2D(t_specularIntensityTexture, v_texCoords).rgb;
     }
     
     vec3 diffuse = vec3(0,0,0);
@@ -202,7 +200,6 @@ void main() {
         vec3 lightDir = normalize(u_pointLights[i].position - v_fragmentPosition);
 
         diffuse += objectDiffuse * u_pointLights[i].color* dot(lightDir,v_normal) ;
-        
     }
     gl_FragColor = vec4( diffuse ,1);
   

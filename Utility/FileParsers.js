@@ -18,8 +18,18 @@ export class Parser{
         var words = line.trim().split(" ").filter(x=>x.length!==0);
         return words.splice(1);
     }
+    static expandToVecN(v,n){
+        var result = [];
+        for (var i = 0; i <n ; i++) {
+            if(i<v.length){
+                result.push(v[i]);
+            }
+            else result.push(0);
+        }
+        return result;
+    }
     static stringArrayToVec(stringArray,n){
-        return stringArray.slice(0,n).map(x=>parseFloat(x));
+        return Parser.expandToVecN( stringArray.slice(0,n).map(x=>parseFloat(x)) , n );
     }
 }
 
