@@ -4,7 +4,8 @@ import {StaticModel} from "../Engine/StaticModel.js";
 import {Camera} from "../Engine/Camera.js";
 import {ObjFileParser} from "../Utility/FileParsers.js";
 import {ShaderProgram,VertexShader,FragmentShader} from "../Engine/ShaderProgram.js";
-import {BlinnPhongShader} from "../Shaders/BlinnPhongShader.js";
+import {PhongShader} from "../Shaders/PhongShader.js";
+import {PointLight} from "../Engine/PointLight.js";
 
 
 "use strict";
@@ -22,12 +23,15 @@ var ext = gl.getExtension('OES_element_index_uint');
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 gl.enable(gl.DEPTH_TEST);
 
-var shaderProgram = new BlinnPhongShader(gl);
+var shaderProgram = new PhongShader(gl);
 var testStaticModel = null;
 
 ObjFileParser.getStaticModelFromFileName("WhiteBloodCell/whitebloodcell.obj",gl,function (staticModel) {
     testStaticModel = staticModel;
 });
+
+var pointLight = new PointLight();
+pointLight.position=vec3.fromValues(0,0,150);
 
 var camera = new Camera(0, 0, 5);
 
@@ -44,7 +48,7 @@ function animate() {
     gl.clearColor(0, 0, 0.8, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     if(testStaticModel){
-        shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat);
+        shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
     }
     requestAnimationFrame( animate );
 }
