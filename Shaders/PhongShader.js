@@ -24,7 +24,7 @@ export class PhongShader extends ShaderProgram{
                 if(materialProperty.texture.glHandle){
                     gl.activeTexture(gl.TEXTURE0+index);
                     gl.bindTexture(gl.TEXTURE_2D,materialProperty.texture.glHandle);
-                    gl.uniform1i(handle.textureLocation,0);
+                    gl.uniform1i(handle.textureLocation,index);
                     gl.uniform1i(handle.hasTextureLocation,1);
                 }
             }
@@ -126,7 +126,7 @@ void main() {
   vec4 worldPosition = u_model * vec4(a_position,1);
   gl_Position = u_projection * u_view * worldPosition;
   v_texCoords = a_texCoords;
-  v_normal = mat3(u_modelAdjugate) * a_normal;
+  v_normal = normalize( mat3(u_modelAdjugate) * a_normal );
   v_cameraPosition = u_cameraPosition;
   v_fragmentPosition = worldPosition.xyz;
 }
@@ -195,13 +195,14 @@ void main() {
     
     vec3 viewDir = normalize(v_cameraPosition - v_fragmentPosition);
 
-
     for(int i = 0;i<MAX_POINTLIGHTS_COUNT;++i){
         vec3 lightDir = normalize(u_pointLights[i].position - v_fragmentPosition);
+        vec3 reflectedLightDir = reflect(-lightDir,v_normal);
 
         diffuse += objectDiffuse * u_pointLights[i].color* dot(lightDir,v_normal) ;
+        specular += objectSpecular * u_pointLights[i].color * pow(dot(reflectedLightDir,viewDir),objectSpecularIntensity.x);
     }
-    gl_FragColor = vec4( diffuse ,1);
+    gl_FragColor = vec4( diffuse+specular ,1);
   
 }
 `;

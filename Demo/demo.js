@@ -26,12 +26,18 @@ gl.enable(gl.DEPTH_TEST);
 var shaderProgram = new PhongShader(gl);
 var testStaticModel = null;
 
+var poolTable = null;
+
 ObjFileParser.getStaticModelFromFileName("WhiteBloodCell/whitebloodcell.obj",gl,function (staticModel) {
     testStaticModel = staticModel;
 });
 
+ObjFileParser.getStaticModelFromFileName("PoolTable/PoolTable.obj",gl,function (staticModel) {
+    poolTable = staticModel;
+});
+
 var pointLight = new PointLight();
-pointLight.position=vec3.fromValues(0,0,150);
+pointLight.position=vec3.fromValues(0,10,10);
 
 var camera = new Camera(0, 0, 5);
 
@@ -49,6 +55,7 @@ function animate() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     if(testStaticModel){
         shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
+        shaderProgram.drawObject(gl,poolTable,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
     }
     requestAnimationFrame( animate );
 }
