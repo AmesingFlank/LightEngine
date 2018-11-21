@@ -1,5 +1,6 @@
 import {ShaderProgram} from "../Engine/ShaderProgram.js";
 import * as mat4 from "../Utility/gl-matrix/mat4.js";
+import {Scene} from "../Engine/Scene.js";
 
 class MaterialPropertyHandle{
     constructor(gl,targetProgram,name){
@@ -68,6 +69,16 @@ export class PhongShader extends ShaderProgram{
         this.texCoordsAttributeLocation = gl.getAttribLocation(this.program, "a_texCoords");
         this.normalAttributeLocation = gl.getAttribLocation(this.program, "a_normal");
     }
+
+    drawScene(gl,scene,view,projection,cameraPosition){
+        this.useProgram(gl);
+        this.setPointLights(gl,scene.pointLights);
+        gl.uniform3fv(this.cameraPositionLocation,cameraPosition);
+        scene.objectList.forEach(object =>{
+            var transform = scene.objectTransformMap[object];
+            this.drawObject(gl,object,transform,view,projection,cameraPosition,scene.pointLights)
+        });
+    }
     drawObject(gl,object,model,view,projection,cameraPosition,pointLights){
         this.useProgram(gl);
         gl.uniformMatrix4fv(this.modelLocation,false,model);
@@ -80,6 +91,7 @@ export class PhongShader extends ShaderProgram{
 
         this.setPointLights(gl,pointLights);
         gl.uniform3fv(this.cameraPositionLocation,cameraPosition);
+
         object.meshes.forEach(mesh =>{
             this.setMaterials(gl,mesh.material);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,mesh.elementBuffer.EBO);

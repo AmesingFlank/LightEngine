@@ -6,6 +6,7 @@ import {ObjFileParser} from "../Utility/FileParsers.js";
 import {ShaderProgram,VertexShader,FragmentShader} from "../Engine/ShaderProgram.js";
 import {PhongShader} from "../Shaders/PhongShader.js";
 import {PointLight} from "../Engine/PointLight.js";
+import {Scene} from "../Engine/Scene.js";
 
 
 "use strict";
@@ -23,6 +24,8 @@ var ext = gl.getExtension('OES_element_index_uint');
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 gl.enable(gl.DEPTH_TEST);
 
+var mainScene = new Scene();
+
 var shaderProgram = new PhongShader(gl);
 var testStaticModel = null;
 
@@ -30,14 +33,17 @@ var poolTable = null;
 
 ObjFileParser.getStaticModelFromFileName("WhiteBloodCell/whitebloodcell.obj",gl,function (staticModel) {
     testStaticModel = staticModel;
+    mainScene.addObject(staticModel,mat4.create());
 });
 
 ObjFileParser.getStaticModelFromFileName("PoolTable/PoolTable.obj",gl,function (staticModel) {
     poolTable = staticModel;
+    mainScene.addObject(staticModel,mat4.create());
 });
 
 var pointLight = new PointLight();
 pointLight.position=vec3.fromValues(0,10,10);
+mainScene.pointLights.push(pointLight);
 
 var camera = new Camera(0, 0, 5);
 
@@ -54,8 +60,9 @@ function animate() {
     gl.clearColor(0, 0, 0.8, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     if(testStaticModel){
-        shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
-        shaderProgram.drawObject(gl,poolTable,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
+        //shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
+        //shaderProgram.drawObject(gl,poolTable,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
+        shaderProgram.drawScene(gl,mainScene,viewMat,projectionMat,camera.position);
     }
     requestAnimationFrame( animate );
 }
