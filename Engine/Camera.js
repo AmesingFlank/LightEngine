@@ -10,14 +10,19 @@ export class Camera{
 
         this.yaw = -Math.PI;
         this.pitch = 0;
-        this.updateVectors();
+        this.updateVectorsFromEuler();
     }
-    updateVectors(){
+    updateVectorsFromEuler(){
         var front = vec3.create();
         front[0]=Math.sin(this.yaw)*Math.cos(this.pitch);
         front[1]=Math.sin(this.pitch);
         front[2]=Math.cos(this.yaw)*Math.cos(this.pitch);
         vec3.normalize(this.front,front);
+        vec3.cross(this.right,this.front,this.worldUp);
+        vec3.cross(this.up,this.right,this.front);
+    }
+    updateVectorsFromFront(){
+        vec3.normalize(this.front,this.front);
         vec3.cross(this.right,this.front,this.worldUp);
         vec3.cross(this.up,this.right,this.front);
     }

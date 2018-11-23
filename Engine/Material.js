@@ -24,6 +24,7 @@ export class Material{
         this.alpha = null;
         this.usePBR = false;
     }
+
 }
 
 export class MaterialProperty{

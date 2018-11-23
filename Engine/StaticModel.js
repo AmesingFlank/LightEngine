@@ -51,6 +51,7 @@ export class StaticModel{
             callBack();
         });
     }
+
 }
 
 export class StaticMesh{

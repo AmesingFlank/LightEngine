@@ -13,4 +13,13 @@ export class Scene{
             this.objectList.push(object);
         this.objectTransformMap[object]=transform;
     }
+    getReadyObjects(){
+        var readyObjects = [];
+        this.objectList.forEach(obj => {
+            if(obj){
+                readyObjects.push(obj);
+            }
+        });
+        return readyObjects;
+    }
 }

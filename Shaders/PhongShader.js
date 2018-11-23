@@ -74,7 +74,7 @@ export class PhongShader extends ShaderProgram{
         this.useProgram(gl);
         this.setPointLights(gl,scene.pointLights);
         gl.uniform3fv(this.cameraPositionLocation,cameraPosition);
-        scene.objectList.forEach(object =>{
+        scene.getReadyObjects().forEach(object =>{
             var transform = scene.objectTransformMap[object];
             this.drawObject(gl,object,transform,view,projection,cameraPosition,scene.pointLights)
         });
@@ -104,7 +104,7 @@ export class PhongShader extends ShaderProgram{
             gl.vertexAttribPointer(this.positionAttributeLocation, 3, gl.FLOAT, false, stride, 0);
 
             gl.enableVertexAttribArray(this.texCoordsAttributeLocation);
-            gl.vertexAttribPointer(this.texCoordsAttributeLocation, 2, gl.FLOAT, false, stride,2*sizeOfFloat);
+            gl.vertexAttribPointer(this.texCoordsAttributeLocation, 2, gl.FLOAT, false, stride,3*sizeOfFloat);
 
             gl.enableVertexAttribArray(this.normalAttributeLocation);
             gl.vertexAttribPointer(this.normalAttributeLocation, 3, gl.FLOAT, false, stride,5*sizeOfFloat);
@@ -214,6 +214,12 @@ void main() {
         diffuse += objectDiffuse * u_pointLights[i].color* dot(lightDir,v_normal) ;
         specular += objectSpecular * u_pointLights[i].color * pow(dot(reflectedLightDir,viewDir),objectSpecularIntensity.x);
     }
+    
+    vec3 normal = vec3(0,0,0);
+    vec3 light_direction = vec3(0,0,0);
+    float geometric_attenuation = max (0.0 , length(normal));
+    
+    
     gl_FragColor = vec4( diffuse+specular ,1);
   
 }

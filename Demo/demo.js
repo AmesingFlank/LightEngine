@@ -38,14 +38,18 @@ ObjFileParser.getStaticModelFromFileName("WhiteBloodCell/whitebloodcell.obj",gl,
 
 ObjFileParser.getStaticModelFromFileName("PoolTable/PoolTable.obj",gl,function (staticModel) {
     poolTable = staticModel;
+    var poolTableModelMat = mat4.create();
     mainScene.addObject(staticModel,mat4.create());
 });
 
+
 var pointLight = new PointLight();
-pointLight.position=vec3.fromValues(0,10,10);
+pointLight.position=vec3.fromValues(0,100,0);
 mainScene.pointLights.push(pointLight);
 
-var camera = new Camera(0, 0, 5);
+var camera = new Camera(0, 100,50);
+camera.front = vec3.fromValues(0,-0.8,-0.2);
+camera.updateVectorsFromFront();
 
 var modelMat = mat4.create();
 var viewMat = mat4.create();
@@ -53,17 +57,16 @@ var projectionMat = mat4.create();
 
 mat4.rotate(modelMat,modelMat,Math.PI,vec3.fromValues(0,1,0));
 viewMat=camera.getViewMatrix();
-mat4.perspective(projectionMat,45,1,0.001,1000);
+mat4.perspective(projectionMat,45,canvas.width/canvas.height,0.001,1000);
 
 
 function animate() {
-    gl.clearColor(0, 0, 0.8, 1);
+    gl.clearColor(0.1,0.1,0.1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if(testStaticModel){
-        //shaderProgram.drawObject(gl,testStaticModel,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
-        //shaderProgram.drawObject(gl,poolTable,modelMat,viewMat,projectionMat,camera.position,[pointLight]);
-        shaderProgram.drawScene(gl,mainScene,viewMat,projectionMat,camera.position);
-    }
+
+    shaderProgram.drawScene(gl,mainScene,viewMat,projectionMat,camera.position);
+
     requestAnimationFrame( animate );
+
 }
 animate();
