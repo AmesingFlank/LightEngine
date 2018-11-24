@@ -48,7 +48,6 @@ export class PhongShader extends ShaderProgram{
             gl.uniform3fv(lightPositionLocation,pointLights[i].position);
             gl.uniform3fv(lightColorLocation,pointLights[i].color);
         }
-
     }
     setUniformLocations(gl){
         this.modelLocation = gl.getUniformLocation(this.program,"u_model");
@@ -75,11 +74,12 @@ export class PhongShader extends ShaderProgram{
         this.setPointLights(gl,scene.pointLights);
         gl.uniform3fv(this.cameraPositionLocation,cameraPosition);
         scene.getReadyObjects().forEach(object =>{
-            var transform = scene.objectTransformMap[object];
-            this.drawObject(gl,object,transform,view,projection,cameraPosition,scene.pointLights)
+            var transform = scene.getObjectTransform(object);
+            this.drawObject(gl,object,transform,view,projection,cameraPosition,scene.pointLights,scene.ambientLight);
         });
     }
-    drawObject(gl,object,model,view,projection,cameraPosition,pointLights){
+    drawObject(gl,object,model,view,projection,cameraPosition,pointLights,ambientLight){
+        if(!object.isVisible) return;
         this.useProgram(gl);
         gl.uniformMatrix4fv(this.modelLocation,false,model);
         gl.uniformMatrix4fv(this.viewLocation,false,view);

@@ -42,6 +42,7 @@ export class ObjFileParser{
             var path = path_name.slice(0,path_name.length-1).join("/")+"/";
             var resultStaticModel = ObjFileParser.parseObj(str);
             resultStaticModel.path = path;
+            resultStaticModel.name = path_name[path_name.length-1];
             resultStaticModel.prepareMaterial(function () {
                 resultStaticModel.prepareRenderData(gl);
                 callBack(resultStaticModel);

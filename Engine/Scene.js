@@ -1,4 +1,5 @@
 import {mat4,vec3} from '../Utility/gl-matrix.js'
+import {vec4} from "../Utility/gl-matrix.js";
 
 
 export class Scene{
@@ -9,9 +10,21 @@ export class Scene{
         this.ambientLight = vec3.fromValues(0,0,0);
     }
     addObject(object,transform){
-        if(!this.objectList.includes(object))
+        if(!this.objectList.includes(object)) {
             this.objectList.push(object);
-        this.objectTransformMap[object]=transform;
+            this.objectTransformMap[object.UID] = mat4.clone(transform);
+        }
+    }
+    setObjectTransform(object,transform){
+        if(this.objectList.includes(object)) {
+            this.objectTransformMap[object.UID] = mat4.clone(transform);
+        }
+    }
+    getObjectTransform(object){
+        if(this.objectList.includes(object)) {
+            return mat4.clone(this.objectTransformMap[object.UID]);
+        }
+        return null;
     }
     getReadyObjects(){
         var readyObjects = [];

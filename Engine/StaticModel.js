@@ -32,9 +32,12 @@ export class StaticModel{
 
         this.materialLib = null;
         this.materialLibFileName = "";
-        this.needMaterialLib = false;
 
         this.path = "";
+        this.name = "";
+
+        this.UID = Date.now()+Math.random();
+        this.isVisible = true;
     }
     prepareRenderData(gl){
         this.vertexBuffer = new VertexBuffer(this.vertices,gl);
@@ -50,6 +53,17 @@ export class StaticModel{
             });
             callBack();
         });
+    }
+    clone(){
+        var copy = new StaticModel();
+        copy.meshes = this.meshes;
+        copy.vertices = this.vertices;
+        copy.vertexBuffer = this.vertexBuffer;
+        copy.materialLib = this.materialLib;
+        copy.materialLibFileName = this.materialLibFileName;
+        copy.path = this.path;
+        copy.name = this.name;
+        return copy;
     }
 
 }
