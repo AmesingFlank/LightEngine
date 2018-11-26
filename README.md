@@ -13,4 +13,4 @@ A tiny tiny render engine built with WebGL
 * Space to shoot the cue ball
 
 # Screenshots
-![screen shot](https://raw.githubusercontent.com/AmesingFlank/LightEngine/master/Demo/demo_scree_shot.png)
+![screen shot](https://raw.githubusercontent.com/AmesingFlank/LightEngine/master/Demo/demo_screenshot.png)
